@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>STREAMDECK — OBS Control</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@400;600;700;800&family=Barlow:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ── Top Header Bar ─────────────────────────────────────────── -->
+  <header class="topbar">
+    <div class="topbar__brand">
+      <span class="topbar__logo">▶</span>
+      <span class="topbar__title">STREAMDECK</span>
+    </div>
+
+    <div class="topbar__status-group">
+      <!-- Connection status -->
+      <div class="status-pill" id="conn-status">
+        <span class="status-pill__dot"></span>
+        <span class="status-pill__label">CONNECTING…</span>
+      </div>
+
+      <!-- Stream timer -->
+      <div class="status-pill status-pill--timer" id="stream-timer" style="display:none">
+        <span class="status-pill__icon">⏱</span>
+        <span id="timer-display">00:00:00</span>
+      </div>
+    </div>
+
+    <div class="topbar__scene-badge">
+      <span class="scene-badge__label">LIVE SCENE</span>
+      <span class="scene-badge__name" id="current-scene-name">—</span>
+    </div>
+  </header>
+
+  <!-- ── Main Layout ────────────────────────────────────────────── -->
+  <main class="dashboard">
+
+    <!-- ── Left Column: Primary Controls ─────────────────────── -->
+    <section class="panel panel--primary">
+      <h2 class="panel__heading">BROADCAST</h2>
+
+      <!-- Stream Control -->
+      <div class="control-card">
+        <div class="control-card__header">
+          <span class="control-card__title">STREAM</span>
+          <span class="control-card__badge" id="stream-badge">OFFLINE</span>
+        </div>
+        <button class="btn btn--stream btn--go" id="btn-stream" onclick="App.toggleStream()">
+          <span class="btn__icon">◉</span>
+          <span class="btn__label" id="btn-stream-label">GO LIVE</span>
+        </button>
+      </div>
+
+      <!-- Record Control -->
+      <div class="control-card">
+        <div class="control-card__header">
+          <span class="control-card__title">RECORD</span>
+          <span class="control-card__badge" id="record-badge">IDLE</span>
+        </div>
+        <button class="btn btn--record" id="btn-record" onclick="App.toggleRecord()">
+          <span class="btn__icon">⏺</span>
+          <span class="btn__label" id="btn-record-label">START REC</span>
+        </button>
+      </div>
+
+      <!-- Live Stats Bar -->
+      <div class="stats-bar" id="stats-bar" style="display:none">
+        <div class="stat">
+          <span class="stat__val" id="stat-fps">—</span>
+          <span class="stat__key">FPS</span>
+        </div>
+        <div class="stat">
+          <span class="stat__val" id="stat-bitrate">—</span>
+          <span class="stat__key">KBPS</span>
+        </div>
+        <div class="stat">
+          <span class="stat__val" id="stat-drop">—</span>
+          <span class="stat__key">DROP%</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Center Column: Scene Switcher ──────────────────────── -->
+    <section class="panel panel--scenes">
+      <h2 class="panel__heading">SCENES</h2>
+      <div class="scene-grid" id="scene-grid">
+        <!-- Populated dynamically by JS -->
+        <div class="scene-grid__empty">
+          <span>Waiting for OBS…</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Right Column: Macros & Extras ──────────────────────── -->
+    <section class="panel panel--macros">
+      <h2 class="panel__heading">MACROS</h2>
+
+      <div class="macro-grid">
+        <!-- Example macro buttons — easy to extend -->
+        <button class="macro-btn macro-btn--green" onclick="App.macro('brb')">
+          <span class="macro-btn__icon">☕</span>
+          <span class="macro-btn__label">BRB</span>
+        </button>
+
+        <button class="macro-btn macro-btn--blue" onclick="App.macro('intro')">
+          <span class="macro-btn__icon">🎬</span>
+          <span class="macro-btn__label">INTRO</span>
+        </button>
+
+        <button class="macro-btn macro-btn--yellow" onclick="App.macro('alert')">
+          <span class="macro-btn__icon">🔔</span>
+          <span class="macro-btn__label">ALERT</span>
+        </button>
+
+        <button class="macro-btn macro-btn--red" onclick="App.macro('end')">
+          <span class="macro-btn__icon">🏁</span>
+          <span class="macro-btn__label">END</span>
+        </button>
+      </div>
+
+      <h2 class="panel__heading" style="margin-top:1.5rem">SOUNDBOARD</h2>
+
+      <div class="macro-grid">
+        <button class="macro-btn macro-btn--purple" onclick="App.playSound('airhorn')">
+          <span class="macro-btn__icon">📯</span>
+          <span class="macro-btn__label">AIRHORN</span>
+        </button>
+
+        <button class="macro-btn macro-btn--purple" onclick="App.playSound('applause')">
+          <span class="macro-btn__icon">👏</span>
+          <span class="macro-btn__label">APPLAUSE</span>
+        </button>
+
+        <button class="macro-btn macro-btn--purple" onclick="App.playSound('drum')">
+          <span class="macro-btn__icon">🥁</span>
+          <span class="macro-btn__label">DRUM</span>
+        </button>
+
+        <button class="macro-btn macro-btn--purple" onclick="App.playSound('fail')">
+          <span class="macro-btn__icon">😬</span>
+          <span class="macro-btn__label">FAIL</span>
+        </button>
+      </div>
+
+      <!-- Connection Settings -->
+      <div class="conn-settings" id="conn-settings">
+        <h2 class="panel__heading" style="margin-top:1.5rem">OBS SETTINGS</h2>
+        <div class="settings-form">
+          <label class="settings-label">
+            <span>HOST</span>
+            <input class="settings-input" id="obs-host" type="text" value="localhost" placeholder="localhost" />
+          </label>
+          <label class="settings-label">
+            <span>PORT</span>
+            <input class="settings-input" id="obs-port" type="number" value="4455" placeholder="4455" />
+          </label>
+          <label class="settings-label">
+            <span>PASSWORD</span>
+            <input class="settings-input" id="obs-pass" type="password" placeholder="Optional" />
+          </label>
+          <button class="btn btn--connect" onclick="App.reconnect()">
+            <span class="btn__icon">⚡</span>
+            <span>RECONNECT</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Bottom: Chat Panel Placeholder ─────────────────────── -->
+    <section class="panel panel--chat">
+      <div class="chat__header">
+        <h2 class="panel__heading">LIVE CHAT</h2>
+        <span class="chat__count" id="chat-count">0 viewers</span>
+      </div>
+      <div class="chat__feed" id="chat-feed">
+        <div class="chat__placeholder">
+          <span>💬 Chat integration coming soon</span>
+          <span class="chat__sub">Connect Twitch / YouTube API to see live chat here</span>
+        </div>
+      </div>
+      <div class="chat__input-row">
+        <input class="chat__input" type="text" placeholder="Send a message as host…" id="chat-msg" />
+        <button class="chat__send" onclick="App.sendChat()">SEND</button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── Toast Notifications ────────────────────────────────────── -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
